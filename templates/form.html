@@ -1,0 +1,28 @@
+{% from "bootstrap5/form.html" import render_form %}
+{%extends "base.html"%}
+
+{%block title%}{{title}}{%endblock%}
+
+{%block content%}
+    <div class="px-4 py-5 my-5 text-center">
+        <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">Form Service</p>
+        </div>
+    </div>
+
+    <main class="mb-4">
+        <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-md-10 mx-auto">
+            {% with messages = get_flashed_messages() %}
+                {% for message in messages %}
+                <p style="color: red; text-align: center;">{{message}}</p>
+                {% endfor %}
+            {% endwith %}
+            {{render_form(form, novalidate=True, button_map={"submit": "primary"})}}
+            </div>
+        </div>
+        </div>
+    </main>
+{%endblock%}

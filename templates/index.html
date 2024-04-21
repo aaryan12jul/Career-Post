@@ -1,0 +1,120 @@
+{%extends "base.html"%}
+
+{%block title%}{{title}}{%endblock%}
+
+{%block content%}
+    <div class="px-4 py-5 my-5 text-center">
+        <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">The All in One Service for All your Hiring Needs</p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a href="{{url_for('register')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Register Now!</button></a>
+            <a href="{{url_for('login')}}"><button type="button" class="btn btn-outline-secondary btn-lg px-4">Log in</button></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container px-4 py-5" id="custom-cards">
+        <h2 class="pb-2 border-bottom">Latest Posts</h2>
+    
+        <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-5">
+          {%if not posts%}
+            {%set count=0%}
+            {%for post in posts if count < 6%}
+              <div class="col">
+                <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}});">
+                  <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">{{post.title}}</h3>
+                    <ul class="d-flex list-unstyled mt-auto">
+                      <li class="d-flex align-items-center me-3">
+                        <img src="https://github.com/twbs.png" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
+                        <small>{{post.author.name}}</small>
+                      </li>
+                      <li class="d-flex align-items-center">
+                        <svg class="bi me-2" width="1em" height="1em"><use xlink:href="#calendar3"></use></svg>
+                        <small>{{post.date}}</small>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {%set count=count+1%}
+            {%endfor%}
+          {%else%}
+            <div class="col">
+              <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-color: black;">
+                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                  <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">Unable to Reach Database</h3>
+                  <ul class="d-flex list-unstyled mt-auto">
+                    <li class="d-flex align-items-center me-3">
+                      <small>Unfortunately, We are Unable to Retrieve any of the Latest Posts from Our Database. Please Try Again Later</small>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          {%endif%}
+        </div>
+    </div>
+
+    <div class="container">
+      <div class="pricing-header p-3 pb-md-4 mx-auto text-center">
+        <h1 class="display-4 fw-normal text-body-emphasis">Pricing</h1>
+        <p class="fs-5 text-body-secondary">Get Set Up Quickly and Efficently for a Little Extra</p>
+      </div>
+
+      <div class="row row-cols-1 row-cols-md-3 mb-3 text-center">
+        <div class="col">
+          <div class="card mb-4 rounded-3 shadow-sm">
+            <div class="card-header py-3">
+              <h4 class="my-0 fw-normal">Free</h4>
+            </div>
+            <div class="card-body">
+              <h1 class="card-title pricing-card-title">$0<small class="text-body-secondary fw-light">/mo</small></h1>
+              <ul class="list-unstyled mt-3 mb-4">
+                <li>Ads</li>
+                <li>1 Post</li>
+                <li>No Comments</li>
+                <li>About Me Page</li>
+              </ul>
+              <a href="{{url_for('register')}}"><button type="button" class="w-100 btn btn-lg btn-outline-primary">Sign up for free</button></a>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card mb-4 rounded-3 shadow-sm">
+            <div class="card-header py-3">
+              <h4 class="my-0 fw-normal">Pro</h4>
+            </div>
+            <div class="card-body">
+              <h1 class="card-title pricing-card-title">$15<small class="text-body-secondary fw-light">/mo</small></h1>
+              <ul class="list-unstyled mt-3 mb-4">
+                <li>No Ads</li>
+                <li>Infinite Posts</li>
+                <li>Comments Enabled</li>
+                <li>Inbuilt Contact Feature</li>
+              </ul>
+              <a href="{{url_for('register')}}"><button type="button" class="w-100 btn btn-lg btn-primary">Get started</button></a>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card mb-4 rounded-3 shadow-sm border-primary">
+            <div class="card-header py-3 text-bg-primary border-primary">
+              <h4 class="my-0 fw-normal">Donate</h4>
+            </div>
+            <div class="card-body">
+              <h1 class="card-title pricing-card-title">$29<small class="text-body-secondary fw-light">/mo</small></h1>
+              <ul class="list-unstyled mt-3 mb-4">
+                <li>No Ads</li>
+                <li>Infinite Posts</li>
+                <li>Comments Enabled</li>
+                <li>Inbuilt Contact Feature</li>
+              </ul>
+              <a href="{{url_for('register')}}"><button type="button" class="w-100 btn btn-lg btn-primary">Donate to Us</button></a>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+{%endblock%}
