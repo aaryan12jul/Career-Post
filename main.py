@@ -1,9 +1,8 @@
-import os
-from flask import Flask, render_template, redirect, url_for, flash
+from flask import Flask, render_template, redirect, url_for, flash, abort
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Text, desc
+from sqlalchemy import Integer, String, Text
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField
@@ -11,10 +10,12 @@ from wtforms.validators import DataRequired, URL, Email
 from flask_ckeditor import CKEditor, CKEditorField
 from flask_gravatar import Gravatar
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, date
+from functools import wraps
+from admin import Secret, Admin, Premium
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
+app.config['SECRET_KEY'] = Secret.FLASK_KEY
 ckeditor = CKEditor(app)
 bootstrap = Bootstrap5(app)
 
@@ -28,7 +29,7 @@ def load_user(user_id):
 class Base(DeclarativeBase):
     pass
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = Secret.DB_URI
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
 
@@ -91,10 +92,29 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Sign In")
 
+class CreatePostForm(FlaskForm):
+    title = StringField("Post Title", validators=[DataRequired()])
+    subtitle = StringField("Subtitle", validators=[DataRequired()])
+    img_url = StringField("Image URL", validators=[DataRequired(), URL()])
+    body = CKEditorField("Post Text", validators=[DataRequired()])
+    submit = SubmitField("Submit Post")
+
+def admin_only(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        for admin in Admin.ADMINS:
+            try:
+                if current_user.email == admin:
+                    return function(*args, **kwargs)
+            except AttributeError:
+                break
+        return abort(403)
+    return wrapper
+
 @app.route('/')
 def homepage():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    return render_template('index.html', posts=reversed(posts), active0="active", year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template('index.html', posts=reversed(posts), active0="active", year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -120,7 +140,7 @@ def register():
             return redirect(url_for('homepage'))
         flash("The Email You Entered Already Exists")
         return redirect('login')
-    return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -132,12 +152,36 @@ def login():
             login_user(user)
             return redirect(url_for('homepage'))
         flash("The Email/Password You Entered Is Invalid")
-    return render_template("form.html", form=form, active2="active", year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template("form.html", form=form, active2="active", year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
 
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('homepage'))
+
+@app.route('/posts')
+def posts():
+    posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
+    return render_template('posts.html', posts=reversed(posts), active1="active", year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+
+
+@app.route('/create-post', methods=['GET', 'POST'])
+@admin_only
+def create_post():
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        new_post = Post(
+            title=form.title.data,
+            subtitle=form.subtitle.data,
+            text=form.body.data,
+            img_url=form.img_url.data,
+            author=current_user,
+            date=date.today().strftime("%B %d, %Y")
+        )
+        db.session.add(new_post)
+        db.session.commit()
+        return redirect(url_for("posts"))
+    return render_template("form.html", form=form, year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
 
 if __name__ == '__main__':
     app.run(debug=True)

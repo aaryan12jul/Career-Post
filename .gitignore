@@ -1,2 +1,4 @@
 my_env/
 instance/
+__pycache__/
+admin.py
