@@ -3,6 +3,22 @@
 {%block title%}{{title}}{%endblock%}
 
 {%block content%}
+    <div class="text-center">
+      <div class="col-lg-4 mx-auto">
+          {%if title == name%}
+            {%for admin in admins%}
+              {%if user.email == admin.email%}
+                <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Admin</button></a>
+                <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Premium</button></a>
+              {%endif%}
+            {%endfor%}
+            <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
+          {%else%}
+            <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+          {%endif%}
+      </div>
+    </div>
+
     <div class="px-4 py-5 my-5 text-center" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
         <img class="d-block mx-auto mb-4" src="{{email|gravatar}}" alt="" width="72" height="72">
         <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
@@ -22,10 +38,10 @@
         </div>
     </div>
 
-    {%if logged_in%}
+    {%if user.email == email%}
         <div class="text-center">
             <div class="col-lg-6 mx-auto">
-                <a href="{{url_for('create_post')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Edit</button></a>
+                <a href="{{edit_url}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Edit</button></a>
             </div>
         </div>
     {%endif%}

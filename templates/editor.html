@@ -1,0 +1,47 @@
+{% from "bootstrap5/form.html" import render_form %}
+{%extends "base.html"%}
+
+{%block title%}{{title}}{%endblock%}
+
+{%block content%}
+    <div class="px-4 py-5 my-5 text-center" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
+        <img class="d-block mx-auto mb-4" src="{{email|gravatar}}" alt="" width="72" height="72">
+        <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">
+              {{subtitle}}
+              <br>
+              By 
+              <a href="{{url_for('about', email=email)}}" style="text-decoration: underline;">{{name}}</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="p-5 text-center bg-body-tertiary rounded-3">
+          {% with messages = get_flashed_messages() %}
+              {% for message in messages %}
+                <p style="color: red; text-align: center;">{{message}}</p>
+              {% endfor %}
+          {% endwith %}
+          {{ form.csrf_token }}
+          {{render_form(form, novalidate=True, button_map={"submit": "primary"})}}
+        </div>
+    </div>
+
+    <div class="container px-4 py-5">
+      <h2 class="pb-2 border-bottom">Posts by {{name}}</h2>
+
+      <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-5">
+          {%if posts%}
+          {%block post_latest%}
+            {{ super() }}
+          {%endblock%}
+        {%else%}
+          {%block post_unavailable%}
+            {{ super() }}
+          {%endblock%}
+        {%endif%}
+      </div>
+  </div>
+{%endblock%}
