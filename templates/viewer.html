@@ -1,0 +1,48 @@
+{%extends "base.html"%}
+
+{%block title%}{{title}}{%endblock%}
+
+{%block content%}
+    <div class="px-4 py-5 my-5 text-center" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
+        <img class="d-block mx-auto mb-4" src="{{email|gravatar}}" alt="" width="72" height="72">
+        <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">
+              {{subtitle}}
+              <br>
+              By 
+              <a href="{{url_for('about', email=email)}}" style="text-decoration: underline;">{{name}}</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="p-5 text-center bg-body-tertiary rounded-3">
+          <p class="col-lg-8 mx-auto fs-5 text-muted">{{text}}</p>
+        </div>
+    </div>
+
+    {%if logged_in%}
+        <div class="text-center">
+            <div class="col-lg-6 mx-auto">
+                <a href="{{url_for('create_post')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Edit</button></a>
+            </div>
+        </div>
+    {%endif%}
+
+    <div class="container px-4 py-5">
+      <h2 class="pb-2 border-bottom">Posts by {{name}}</h2>
+
+      <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-5">
+          {%if posts%}
+          {%block post_latest%}
+            {{ super() }}
+          {%endblock%}
+        {%else%}
+          {%block post_unavailable%}
+            {{ super() }}
+          {%endblock%}
+        {%endif%}
+      </div>
+  </div>
+{%endblock%}

@@ -73,7 +73,7 @@ class Comment(db.Model):
 class About(db.Model):
     __tablename__ = "about_page"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    text: Mapped[str] = mapped_column(Text, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False, default=f"Hello, It is nice to Meet You!")
 
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     author: Mapped["User"] = relationship("User", back_populates="about")
@@ -99,6 +99,10 @@ class CreatePostForm(FlaskForm):
     body = CKEditorField("Post Text", validators=[DataRequired()])
     submit = SubmitField("Submit Post")
 
+class CreateAboutForm(FlaskForm):
+    body = CKEditorField("Post Text", validators=[DataRequired()])
+    submit = SubmitField("Save")
+
 def admin_only(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -111,10 +115,32 @@ def admin_only(function):
         return abort(403)
     return wrapper
 
+def premium_only(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        for premium in Premium.PAID:
+            try:
+                if current_user.email == premium:
+                    return function(*args, **kwargs)
+            except AttributeError:
+                break
+        return abort (403)
+    return wrapper
+
+def logged_on(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if current_user.is_authenticated:
+            return function(*args, **kwargs)
+        else:
+            flash('You Need to Login First')
+            return redirect(url_for('login'))
+    return wrapper
+
 @app.route('/')
 def homepage():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    return render_template('index.html', posts=reversed(posts), active0="active", year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+    return render_template('index.html', posts=list(reversed(posts)), active0="active", count_target=6, year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -133,14 +159,17 @@ def register():
                 password=password
             )
 
+            about_user = About(author=new_user)
+
             db.session.add(new_user)
+            db.session.add(about_user)
             db.session.commit()
 
             login_user(new_user)
             return redirect(url_for('homepage'))
         flash("The Email You Entered Already Exists")
         return redirect('login')
-    return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+    return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -152,7 +181,7 @@ def login():
             login_user(user)
             return redirect(url_for('homepage'))
         flash("The Email/Password You Entered Is Invalid")
-    return render_template("form.html", form=form, active2="active", year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+    return render_template("form.html", form=form, active2="active", year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
 
 @app.route('/logout')
 def logout():
@@ -162,11 +191,18 @@ def logout():
 @app.route('/posts')
 def posts():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    return render_template('posts.html', posts=reversed(posts), active1="active", year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+    return render_template('posts.html', posts=list(reversed(posts)), active1="active", count_target=20, year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
 
+@app.route('/view-post/<id>')
+def view_post(id):
+    post = db.get_or_404(Post, id)
+    if post:
+        posts = db.session.execute(db.select(Post).where(Post.author_id==post.author_id)).scalars().all()
+        return render_template('viewer.html', posts=list(reversed(posts)), count_target=3, email=post.author.email, title=post.title, subtitle=post.subtitle, name=post.author.name, text=post.text, image=post.img_url, year=year, logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
+    return redirect(url_for('posts'))
 
 @app.route('/create-post', methods=['GET', 'POST'])
-@admin_only
+@logged_on
 def create_post():
     form = CreatePostForm()
     if form.validate_on_submit():
@@ -181,7 +217,16 @@ def create_post():
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for("posts"))
-    return render_template("form.html", form=form, year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS)
+    return render_template("form.html", form=form, year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
+
+@app.route('/about/<email>')
+def about(email):
+    user = db.session.execute(db.select(User).where(User.email==email)).scalar()
+    if user:
+        about = db.session.execute(db.select(About).where(About.author_id==user.id)).scalar()
+        posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
+        return render_template('viewer.html', posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=about.text, year=year, logged_in=current_user.is_authenticated, user=current_user, admins=Admin.ADMINS, premiums=Premium.PAID)
+    return abort(403)
 
 if __name__ == '__main__':
     app.run(debug=True)
