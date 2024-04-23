@@ -74,8 +74,8 @@ class Type_User(db.Model):
     __tablename__ = "typeofuser"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    admin: Mapped[bool] = mapped_column(Boolean, nullable=False, unique=True)
-    premium: Mapped[bool] = mapped_column(Boolean, nullable=False, unique=True)
+    admin: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    premium: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
 with app.app_context():
     db.create_all()
