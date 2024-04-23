@@ -14,7 +14,9 @@
             {%endfor%}
             <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
           {%else%}
-            <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+            {%if user.email == email%}
+              <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+            {%endif%}
           {%endif%}
       </div>
     </div>
