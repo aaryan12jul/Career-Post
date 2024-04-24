@@ -84,6 +84,7 @@ class RegisterForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
+    reenter_pass = PasswordField("Re Enter Password", validators=[DataRequired()])
     submit = SubmitField("Sign Up")
 
 class LoginForm(FlaskForm):
@@ -151,29 +152,32 @@ def register():
         user = db.session.execute(db.select(User).where(User.email==email)).scalar()
 
         if not user:
-            name = form.name.data
-            password = generate_password_hash(password=form.password.data, method='pbkdf2:sha256', salt_length=8)
+            if form.password.data == form.reenter_pass.data:
+                name = form.name.data
+                password = generate_password_hash(password=form.password.data, method='pbkdf2:sha256', salt_length=8)
 
-            new_user = User(
-                email=email,
-                name=name,
-                password=password
-            )
+                new_user = User(
+                    email=email,
+                    name=name,
+                    password=password
+                )
 
-            new_type_user = Type_User(
-                email=email,
-                admin=False,
-                premium=False
-            )
+                new_type_user = Type_User(
+                    email=email,
+                    admin=False,
+                    premium=False
+                )
 
-            db.session.add(new_user)
-            db.session.add(new_type_user)
-            db.session.commit()
+                db.session.add(new_user)
+                db.session.add(new_type_user)
+                db.session.commit()
 
-            login_user(new_user)
-            return redirect(url_for('posts'))
-        flash("The Email You Entered Already Exists")
-        return redirect('login')
+                login_user(new_user)
+                return redirect(url_for('posts'))
+            flash("The Passwords You Entered Do Not Match")
+        else:
+            flash("The Email You Entered Already Exists")
+            return redirect('login')
     return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user, admins=db.session.execute(db.select(Type_User).where(Type_User.admin==True)).scalars().all(), premiums=db.session.execute(db.select(Type_User).where(Type_User.premium==True)).scalars().all())
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -285,7 +289,10 @@ def delete_account(email):
     if current_user.email == email:
         logout_user()
         user = db.session.execute(db.select(User).where(User.email==email)).scalar()
+        user_type = db.session.execute(db.select(User).where(Type_User.email==email)).scalar()
+
         db.session.delete(user)
+        db.session.delete(user_type)
         db.session.commit()
         return redirect(url_for('register'))
     return abort(403)
@@ -294,7 +301,7 @@ def delete_account(email):
 @admin_only
 def make_admin(email):
     user = db.session.execute(db.select(Type_User).where(Type_User.email==email)).scalar()
-    user.admin == True
+    user.admin = True
     db.session.commit()
     return redirect(url_for('about', email=email))
 
@@ -302,7 +309,7 @@ def make_admin(email):
 @admin_only
 def make_premium(email):
     user = db.session.execute(db.select(Type_User).where(Type_User.email==email)).scalar()
-    user.premium == True
+    user.premium = True
     db.session.commit()
     return redirect(url_for('about', email=email))
 
