@@ -6,11 +6,12 @@ from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, Boolean
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField
+from wtforms import StringField, SubmitField, PasswordField, TextAreaField
 from wtforms.validators import DataRequired, URL, Email
 from flask_ckeditor import CKEditor, CKEditorField
 from flask_gravatar import Gravatar
 from werkzeug.security import generate_password_hash, check_password_hash
+from smtplib import SMTP
 from datetime import datetime, date
 from functools import wraps
 
@@ -102,6 +103,13 @@ class CreatePostForm(FlaskForm):
 class CreateAboutForm(FlaskForm):
     body = CKEditorField("Post Text", validators=[DataRequired()])
     submit = SubmitField("Save")
+
+class ContactForm(FlaskForm):
+    name = StringField("Name", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired()])
+    phone = StringField("Phone Number", validators=[DataRequired()])
+    message = TextAreaField("Message", validators=[DataRequired()])
+    submit = SubmitField("Send")
 
 def admin_only(function):
     @wraps(function)
@@ -229,7 +237,7 @@ def create_post():
         db.session.add(new_post)
         db.session.commit()
         return redirect(url_for("posts"))
-    return render_template("form.html", form=form, year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user, admins=db.session.execute(db.select(Type_User).where(Type_User.admin==True)).scalars().all(), premiums=db.session.execute(db.select(Type_User).where(Type_User.premium==True)).scalars().all())
+    return render_template("form.html", form=form, year=year, title="Create Post", logged_in=current_user.is_authenticated, user=current_user, admins=db.session.execute(db.select(Type_User).where(Type_User.admin==True)).scalars().all(), premiums=db.session.execute(db.select(Type_User).where(Type_User.premium==True)).scalars().all())
 
 @app.route('/edit-post/<email>/<id>', methods=['GET', 'POST'])
 @logged_on
@@ -264,12 +272,33 @@ def delete_post(email, id):
         return redirect(url_for('about', email=email))
     return abort(403)
 
-@app.route('/about/<email>')
+@app.route('/about/<email>', methods=['GET', 'POST'])
 def about(email):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
+        email_sent=False
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
-        return render_template('viewer.html', edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, admins=db.session.execute(db.select(Type_User).where(Type_User.admin==True)).scalars().all(), premiums=db.session.execute(db.select(Type_User).where(Type_User.premium==True)).scalars().all())
+        form = ContactForm(
+            name=current_user.name,
+            email=current_user.email
+            )
+        if form.validate_on_submit():
+            name = form.name.data
+            from_email = form.email.data
+            phone = form.phone.data
+            message = form.message.data
+            from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
+            if from_user:
+                EMAIL = os.environ.get('EMAIL')
+                PASSWORD = os.environ.get('PASSWORD')
+                with SMTP('smtp.gmail.com') as connection:
+                    connection.starttls()
+                    connection.login(user=EMAIL, password=PASSWORD)
+                    connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
+                email_sent=True
+            else:
+                flash("The Email You Entered Is Invalid")
+        return render_template('viewer.html', form=form, email_sent=email_sent, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, admins=db.session.execute(db.select(Type_User).where(Type_User.admin==True)).scalars().all(), premiums=db.session.execute(db.select(Type_User).where(Type_User.premium==True)).scalars().all())
     return abort(403)
 
 @app.route('/edit-about/<email>', methods=['GET', 'POST'])
