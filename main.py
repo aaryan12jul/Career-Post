@@ -108,9 +108,12 @@ def admin_only(function):
     def wrapper(*args, **kwargs):
         user = db.session.execute(db.select(Type_User).where(Type_User.email==current_user.email)).scalar()
         if current_user.get_id() != '1':
-            if user and user.admin:
-                return function(*args, **kwargs)
-            return abort(403)
+            try:
+                if user and user.admin:
+                    return function(*args, **kwargs)
+                return abort(403)
+            except AttributeError:
+                return abort(403)
         else:
             user.admin = True
             return function(*args, **kwargs)
