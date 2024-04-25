@@ -9,12 +9,10 @@
           <h2 class="mb-4 pb-2 border-bottom text-body-emphasis">Email Successfully Sent</h2>
         {%endif%}
           {%if title == name%}
-            {%for admin in admins%}
-              {%if user.email == admin.email%}
-                <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Admin</button></a>
-                <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Premium</button></a>
-              {%endif%}
-            {%endfor%}
+            {%if user.admin%}
+              <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Admin</button></a>
+              <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Premium</button></a>
+            {%endif%}
             <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
           {%else%}
             {%if user.email == email%}
@@ -67,15 +65,39 @@
       </div>
   </div>
 
-  <div class="text-center">
-    {%if title == name%}
-      {%for premium in premiums%}
-        {%if email == premium.email%}
+  <div class="container px-4 py-5">
+    <div class="text-center">
+      {%if author.premium%}
+
+        {%if title == name%}
           {%block form%}
             {{ super() }}
           {%endblock%}
+
+        {%else%}
+
+          <div class="comment">
+            {{ ckeditor.config(name='comment') }}
+            {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
+            
+            <ul class="commentList">
+              {%for comment in post.comments%}
+                <li class="mt-5">
+                  <div class="commenterImage">
+                    <img src="{{comment.author.email|gravatar}}">
+                  </div>
+                  <div class="commentText">
+                    <p>{{comment.text|safe}}</p>
+                    <span class="date sub-text">{{comment.author.name}}</span>
+                  </div>
+                </li>
+              {%endfor%}
+            </ul>
+          </div>
+
         {%endif%}
-      {%endfor%}
-    {%endif%}
+      
+      {%endif%}
+    </div>
   </div>
 {%endblock%}
