@@ -39,8 +39,8 @@
                     {%endif%}
                 </ul>
     
-                <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
-                    <input type="search" class="form-control" placeholder="Search..." aria-label="Search">
+                <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search" action="{{url_for('search', query=query)}}">
+                    <input type="search" class="form-control" placeholder="Search..." aria-label="Search" name="query">
                 </form>
     
                 {%if logged_in%}

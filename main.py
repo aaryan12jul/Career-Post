@@ -1,6 +1,6 @@
 # Imports
 import os
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
@@ -8,7 +8,7 @@ from sqlalchemy import Integer, String, Text, Boolean
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, TextAreaField
-from wtforms.validators import DataRequired, URL, Email
+from wtforms.validators import DataRequired, Email
 from flask_ckeditor import CKEditor, CKEditorField
 from flask_gravatar import Gravatar
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -241,7 +241,6 @@ def logout():
 @app.route('/posts')
 def posts():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    print(dark_mode)
     return render_template('posts.html', posts=list(reversed(posts)), active1="active", dark_mode=dark_mode, count_target=20, year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user)
 
 # View Specified Post
@@ -423,6 +422,25 @@ def delete_account(email):
         else:
             return redirect(url_for('posts'))
     return abort(403)
+
+# Delete Comments Route
+@app.route('/delete-comment/<id>')
+@logged_on
+def delete_comment(id):
+    comment = db.get_or_404(Comment, id)
+    if current_user.admin or current_user.id == comment.author_id or comment.post.author.email == current_user.email:
+        post = db.get_or_404(Post, comment.post_id)
+        db.session.delete(comment)
+        db.session.commit()
+        return redirect(url_for('view_post', id=post.id))
+    return abort(403)
+
+# Search Route
+@app.route('/search/')
+def search():
+    query = request.args.get('query')
+    results = Post.query.filter(Post.title.contains(query)).all()
+    return render_template('posts.html', posts=list(results), dark_mode=dark_mode, count_target=20, year=year, title=query, logged_in=current_user.is_authenticated, user=current_user)
 
 # Change Theme
 @app.route('/theme/<make>')
