@@ -298,7 +298,7 @@ def create_post():
 
         if not post:
             new_post = Post(
-                title=form.title.data,
+                title=form.title.data.title(),
                 subtitle=form.subtitle.data,
                 text=form.body.data,
                 img_url=form.img_url.data,
@@ -449,7 +449,7 @@ def delete_comment(id):
 # Search Route
 @app.route('/search/')
 def search():
-    query = request.args.get('query')
+    query = request.args.get('query').title()
     results = Post.query.filter(Post.title.contains(query)).all()
     return render_template('posts.html', posts=list(results), dark_mode=dark_mode, count_target=20, year=year, title=query, logged_in=current_user.is_authenticated, user=current_user)
 
