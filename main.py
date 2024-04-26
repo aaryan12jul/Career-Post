@@ -186,6 +186,7 @@ def homepage():
 # Register Route
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    premium = request.args.get('premium', False)
     form = RegisterForm()
     if form.validate_on_submit():
         email = form.email.data
@@ -196,13 +197,22 @@ def register():
                 name = form.name.data
                 password = generate_password_hash(password=form.password.data, method='pbkdf2:sha256', salt_length=8)
 
-                new_user = User(
-                    email=email,
-                    name=name,
-                    password=password,
-                    admin=False,
-                    premium=False
-                )
+                if premium:
+                    new_user = User(
+                        email=email,
+                        name=name,
+                        password=password,
+                        admin=False,
+                        premium=True
+                    )
+                else:
+                    new_user = User(
+                        email=email,
+                        name=name,
+                        password=password,
+                        admin=False,
+                        premium=False
+                    )
 
                 db.session.add(new_user)
                 db.session.commit()
@@ -418,6 +428,7 @@ def delete_account(email):
         db.session.delete(user)
         db.session.commit()
         if current_user.email == email:
+            logout_user()
             return redirect(url_for('register'))
         else:
             return redirect(url_for('posts'))
