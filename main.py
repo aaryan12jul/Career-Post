@@ -361,7 +361,6 @@ def delete_post(email, id):
 def about(email, message=''):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
-        email_sent=False
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
         
         if current_user.is_authenticated:
@@ -369,29 +368,29 @@ def about(email, message=''):
                 name=current_user.name,
                 email=current_user.email
             )
-
-            if form.validate_on_submit():
-                name = form.name.data
-                from_email = form.email.data
-                phone = form.phone.data
-                message = form.message.data
-                from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
-                
-                if from_user:
-                    EMAIL = os.environ.get('EMAIL')
-                    PASSWORD = os.environ.get('PASSWORD')
-                    with SMTP('smtp.gmail.com') as connection:
-                        connection.starttls()
-                        connection.login(user=EMAIL, password=PASSWORD)
-                        connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
-                    email_sent=True
-
-                else:
-                    flash("The Email You Entered Is Invalid")
         else:
             form = ContactForm()
-        return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, email_sent=email_sent, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
-    return redirect(url_for('homepage'))
+
+        if form.validate_on_submit():
+            name = form.name.data
+            from_email = form.email.data
+            phone = form.phone.data
+            message = form.message.data
+
+            from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
+            if from_user:
+                EMAIL = os.environ.get('EMAIL')
+                PASSWORD = os.environ.get('PASSWORD')
+                with SMTP('smtp.gmail.com') as connection:
+                    connection.starttls()
+                    connection.login(user=EMAIL, password=PASSWORD)
+                    connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
+                message = 'Email Successfully Sent'
+            else:
+                flash("The Email You Entered Is Invalid")
+
+        return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
+    return redirect(url_for('posts'))
 
 # Edit About Page
 @app.route('/edit-about/<email>', methods=['GET', 'POST'])
