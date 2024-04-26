@@ -362,6 +362,9 @@ def about(email, message=''):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
+
+        message = 'Unfortunately, You Device is Blocking Email Transfer. Please Email Directly'
+        flash('Unfortunately, You Device is Blocking Email Transfer. Please Email Directly')
         
         if current_user.is_authenticated:
             form = ContactForm(
@@ -486,4 +489,4 @@ def make_premium(email):
 
 # Running Code
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
