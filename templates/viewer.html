@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="px-4 py-5 my-5 text-center" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
+    <div class="px-4 py-5 my-5 text-center text-bg-dark" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
         <img class="d-block mx-auto mb-4" src="{{email|gravatar}}" alt="" width="72" height="72">
         <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
         {%if title != name%}
@@ -42,7 +42,7 @@
                 {{subtitle}}
                 <br>
                 By 
-                <a href="{{url_for('about', email=email)}}" style="text-decoration: underline;">{{name}}</a>
+                <a href="{{url_for('about', email=email)}}" style="text-decoration: underline; color: rgb(97, 192, 224);">{{name}}</a>
               </p>
           </div>
         {%endif%}
