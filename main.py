@@ -40,6 +40,9 @@ gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=Fa
 # Current Year
 year = datetime.now().year
 
+# Dark Mode
+dark_mode = True
+
 # Database Template
 class Base(DeclarativeBase):
     pass
@@ -57,7 +60,7 @@ class Post(db.Model):
     subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
     date: Mapped[str] = mapped_column(String(250), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    img_url: Mapped[str] = mapped_column(String, nullable=False)
+    img_url: Mapped[str] = mapped_column(String, nullable=True)
 
     author_id: Mapped[int] = mapped_column(Integer, db.ForeignKey("users.id"))
     author: Mapped['User'] = relationship("User", back_populates="posts")
@@ -111,13 +114,13 @@ class LoginForm(FlaskForm):
 class CreatePostForm(FlaskForm):
     title = StringField("Post Title", validators=[DataRequired()])
     subtitle = StringField("Subtitle", validators=[DataRequired()])
-    img_url = StringField("Image URL", validators=[DataRequired(), URL()])
+    img_url = StringField("Image URL")
     body = CKEditorField("Post Text", validators=[DataRequired()])
     submit = SubmitField("Submit Post")
 
 # About Page Creation Form
 class CreateAboutForm(FlaskForm):
-    body = CKEditorField("Post Text", validators=[DataRequired()])
+    body = CKEditorField("About Text", validators=[DataRequired()])
     submit = SubmitField("Save")
 
 # Contact Form
@@ -178,7 +181,7 @@ def logged_on(function):
 @app.route('/')
 def homepage():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    return render_template('index.html', posts=list(reversed(posts)), active0="active", count_target=6, year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template('index.html', posts=list(reversed(posts)), active0="active", dark_mode=dark_mode, count_target=6, year=year, title="Career Post", logged_in=current_user.is_authenticated, user=current_user)
 
 # Register Route
 @app.route('/register', methods=['GET', 'POST'])
@@ -210,7 +213,7 @@ def register():
         else:
             flash("The Email You Entered Already Exists")
             return redirect('login')
-    return render_template("form.html", form=form, active3="active", year=year, title="Register", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template("form.html", form=form, active3="active", year=year, dark_mode=dark_mode, title="Register", logged_in=current_user.is_authenticated, user=current_user)
 
 # Login Route
 @app.route('/login', methods=['GET', 'POST'])
@@ -226,7 +229,7 @@ def login():
             return redirect(url_for('posts'))
         
         flash("The Email/Password You Entered Is Invalid")
-    return render_template("form.html", form=form, active2="active", year=year, title="Log In", logged_in=current_user.is_authenticated, user=current_user)
+    return render_template("form.html", form=form, active2="active", year=year, dark_mode=dark_mode, title="Log In", logged_in=current_user.is_authenticated, user=current_user)
 
 # Logout Route
 @app.route('/logout')
@@ -238,7 +241,8 @@ def logout():
 @app.route('/posts')
 def posts():
     posts = db.session.execute(db.select(Post).order_by(Post.id)).scalars().all()
-    return render_template('posts.html', posts=list(reversed(posts)), active1="active", count_target=20, year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user)
+    print(dark_mode)
+    return render_template('posts.html', posts=list(reversed(posts)), active1="active", dark_mode=dark_mode, count_target=20, year=year, title="Latest Posts", logged_in=current_user.is_authenticated, user=current_user)
 
 # View Specified Post
 @app.route('/view-post/<id>', methods=['GET', 'POST'])
@@ -265,7 +269,7 @@ def view_post(id):
             else:
                 flash('You Need to Login to Comment on Posts')
                 return redirect(url_for('login'))
-        return render_template('viewer.html', post=post, form=form, edit_url=url_for('edit_post', email=post.author.email, id=id), id=id, posts=list(reversed(posts)), count_target=3, email=post.author.email, title=post.title, subtitle=post.subtitle, name=post.author.name, text=post.text, image=post.img_url, year=year, logged_in=current_user.is_authenticated, user=current_user, author=author)
+        return render_template('viewer.html', post=post, form=form, dark_mode=dark_mode, edit_url=url_for('edit_post', email=post.author.email, id=id), id=id, posts=list(reversed(posts)), count_target=3, email=post.author.email, title=post.title, subtitle=post.subtitle, name=post.author.name, text=post.text, image=post.img_url, year=year, logged_in=current_user.is_authenticated, user=current_user, author=author)
     
     return redirect(url_for('posts'))
 
@@ -273,23 +277,33 @@ def view_post(id):
 @app.route('/create-post', methods=['GET', 'POST'])
 @logged_on
 def create_post():
-    form = CreatePostForm()
-
-    if form.validate_on_submit():
-        new_post = Post(
-            title=form.title.data,
-            subtitle=form.subtitle.data,
-            text=form.body.data,
-            img_url=form.img_url.data,
-            author=current_user,
-            date=date.today().strftime("%B %d, %Y")
-        )
-
-        db.session.add(new_post)
-        db.session.commit()
-        return redirect(url_for("posts"))
+    if not current_user.admin and not current_user.premium:
+        posts = db.session.execute(db.select(Post).where(Post.author_id==current_user.id)).scalars().all()
+        for post in posts:
+            if post.date == date.today().strftime("%B %d, %Y"):
+                return redirect(url_for('about', email=current_user.email, message='You Can Not Make Any More Posts Today'))
     
-    return render_template("form.html", form=form, year=year, title="Create Post", logged_in=current_user.is_authenticated, user=current_user)
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        post = db.session.execute(db.select(Post).where(Post.title==form.title.data)).scalar()
+
+        if not post:
+            new_post = Post(
+                title=form.title.data,
+                subtitle=form.subtitle.data,
+                text=form.body.data,
+                img_url=form.img_url.data,
+                author=current_user,
+                date=date.today().strftime("%B %d, %Y")
+            )
+
+            db.session.add(new_post)
+            db.session.commit()
+            return redirect(url_for("posts"))
+        else:
+            flash('A Post with that Title Already Exists')
+    
+    return render_template("form.html", form=form, year=year, dark_mode=dark_mode, title="Create Post", logged_in=current_user.is_authenticated, user=current_user)
 
 # Edit Post
 @app.route('/edit-post/<email>/<id>', methods=['GET', 'POST'])
@@ -316,14 +330,14 @@ def edit_post(email, id):
             db.session.commit()
             return redirect(url_for('view_post', id=id))
         
-        return render_template('editor.html', form=form, posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user)
+        return render_template('editor.html', form=form, dark_mode=dark_mode, posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user)
     return abort(403)
 
 # Deleting Post
 @app.route('/delete/<email>/<id>')
 @logged_on
 def delete_post(email, id):
-    if current_user.email == email:
+    if current_user.email == email or current_user.admin:
         post = db.get_or_404(Post, id)
         
         db.session.delete(post)
@@ -334,15 +348,20 @@ def delete_post(email, id):
 
 # About Page Route
 @app.route('/about/<email>', methods=['GET', 'POST'])
-def about(email):
+@app.route('/about/<email>/<message>')
+def about(email, message=''):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
         email_sent=False
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
-        form = ContactForm(
-            name=current_user.name,
-            email=current_user.email
-        )
+        
+        if current_user.is_authenticated:
+            form = ContactForm(
+                name=current_user.name,
+                email=current_user.email
+            )
+        else:
+            form = ContactForm()
 
         if form.validate_on_submit():
             name = form.name.data
@@ -362,7 +381,7 @@ def about(email):
 
             else:
                 flash("The Email You Entered Is Invalid")
-        return render_template('viewer.html', form=form, email_sent=email_sent, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
+        return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, email_sent=email_sent, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
     return redirect(url_for('homepage'))
 
 # Edit About Page
@@ -378,21 +397,42 @@ def edit_about(email):
             user.about_text = form.body.data
             db.session.commit()
             return redirect(url_for('about', email=email))
-        return render_template('editor.html', form=form, posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user)
+        return render_template('editor.html', form=form, dark_mode=dark_mode, posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user)
     return abort(403)
 
 # Delete Account Route
 @app.route('/delete/<email>')
 @logged_on
 def delete_account(email):
-    if current_user.email == email:
-        logout_user()
+    if current_user.email == email or current_user.admin:
         user = db.session.execute(db.select(User).where(User.email==email)).scalar()
+        posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
+        comments = db.session.execute(db.select(Comment).where(Comment.author_id==user.id)).scalars().all()
+        for post in posts:
+            for comment in post.comments:
+                db.session.delete(comment)
+            db.session.delete(post)
+
+        for comment in comments:
+            db.session.delete(comment)
 
         db.session.delete(user)
         db.session.commit()
-        return redirect(url_for('register'))
+        if current_user.email == email:
+            return redirect(url_for('register'))
+        else:
+            return redirect(url_for('posts'))
     return abort(403)
+
+# Change Theme
+@app.route('/theme/<make>')
+def theme(make):
+    global dark_mode
+    if make == 'True':
+        dark_mode = True
+    elif make == 'False':
+        dark_mode = False
+    return redirect(url_for('posts'))
 
 # Making Admin Route
 @app.route('/make-admin/<email>')

@@ -8,15 +8,26 @@
         {%if email_sent%}
           <h2 class="mb-4 pb-2 border-bottom text-body-emphasis">Email Successfully Sent</h2>
         {%endif%}
+        {%if message%}
+          <h2 class="mb-4 pb-2 border-bottom text-body-emphasis">{{message}}</h2>
+        {%endif%}
           {%if title == name%}
             {%if user.admin%}
               <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Admin</button></a>
               <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Premium</button></a>
+              <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
+            {%else%}
+              {%if author.email == user.email%}
+                <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>            
+              {%endif%}
             {%endif%}
-            <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
           {%else%}
             {%if user.email == email%}
               <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+            {%else%}
+              {%if user.admin%}
+                <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+              {%endif%}
             {%endif%}
           {%endif%}
       </div>
@@ -25,14 +36,16 @@
     <div class="px-4 py-5 my-5 text-center" style="background-image: url({{image}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
         <img class="d-block mx-auto mb-4" src="{{email|gravatar}}" alt="" width="72" height="72">
         <h1 class="display-5 fw-bold text-body-emphasis">{{title}}</h1>
-        <div class="col-lg-6 mx-auto">
-            <p class="lead mb-4">
-              {{subtitle}}
-              <br>
-              By 
-              <a href="{{url_for('about', email=email)}}" style="text-decoration: underline;">{{name}}</a>
-            </p>
-        </div>
+        {%if title != name%}
+          <div class="col-lg-6 mx-auto">
+              <p class="lead mb-4">
+                {{subtitle}}
+                <br>
+                By 
+                <a href="{{url_for('about', email=email)}}" style="text-decoration: underline;">{{name}}</a>
+              </p>
+          </div>
+        {%endif%}
     </div>
 
     <div class="container my-5">
@@ -68,25 +81,22 @@
   <div class="container px-4">
     <div class="text-center">
       {%if author.premium%}
-
         {%if title == name%}
-          {%block form%}
-            <div class="px-4 text-center">
-              <h1 class="display-5 fw-bold text-body-emphasis">Contact {{name}}</h1>
-              <div class="col-lg-6 mx-auto">
-                  <p class="lead mb-4">Form Service</p>
+          {%if logged_in%}
+            {%block form%}
+              <div class="px-4 text-center">
+                <h1 class="display-5 fw-bold text-body-emphasis">Contact {{name}}</h1>
+                <div class="col-lg-6 mx-auto">
+                    <p class="lead mb-4">Form Service</p>
+                </div>
               </div>
-            </div>
-
-            {{ super() }}
-          {%endblock%}
-
+              {{ super() }}
+            {%endblock%}
+          {%endif%}
         {%else%}
-
           <div class="comment">
             {{ ckeditor.config(name='comment') }}
             {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
-            
             <ul class="commentList">
               {%for comment in post.comments%}
                 <li class="mt-5">
@@ -101,9 +111,7 @@
               {%endfor%}
             </ul>
           </div>
-
         {%endif%}
-      
       {%endif%}
     </div>
   </div>

@@ -16,23 +16,15 @@
         </div>
     </div>
 
-    <div class="container my-5">
-        <div class="p-5 text-center bg-body-tertiary rounded-3">
-          {% with messages = get_flashed_messages() %}
-              {% for message in messages %}
-                <p style="color: red; text-align: center;">{{message}}</p>
-              {% endfor %}
-          {% endwith %}
-          {{ form.csrf_token }}
-          {{render_form(form, novalidate=True, button_map={"submit": "primary"})}}
-        </div>
-    </div>
+    {%block form%}
+      {{ super() }}
+    {%endblock%}
 
     <div class="container px-4 py-5">
       <h2 class="pb-2 border-bottom">Posts by {{name}}</h2>
 
       <div class="row row-cols-1 row-cols-lg-3 align-items-stretch g-4 py-5">
-          {%if posts%}
+        {%if posts%}
           {%block post_latest%}
             {{ super() }}
           {%endblock%}

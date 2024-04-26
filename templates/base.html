@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+{%if dark_mode%}
+<html lang="en" data-bs-theme='dark'>
+{%elif not dark_mode%}
+<html lang="en">
+{%endif%}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,6 +52,11 @@
                             <li><a class="dropdown-item" href="{{url_for('create_post')}}">New Post</a></li>
                             <li><a class="dropdown-item" href="{{url_for('about', email=user.email)}}">About Page</a></li>
                             <li><hr class="dropdown-divider"></li>
+                            {%if dark_mode%}
+                                <li><a class="dropdown-item" href="{{url_for('theme', make=False)}}">Light Mode</a></li>
+                            {%elif not dark_mode%}
+                                <li><a class="dropdown-item" href="{{url_for('theme', make=True)}}">Dark Mode</a></li>
+                            {%endif%}
                             <li><a class="dropdown-item" href="{{url_for('logout')}}">Sign out</a></li>
                         </ul>
                     </div>
@@ -60,61 +69,63 @@
         {%block post_latest%}
         {%set count_target=count_target%}
         {%set count=0%}
-        {%for post in posts if count < count_target%}
+        {%for post in posts%}
+            {%if count < count_target%}
+                <div class="col">
+                    <a href="{{url_for('view_post', id=post.id)}}">
+                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
+                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                            <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold text-body-emphasis">{{post.title}}</h3>
+                            <ul class="d-flex list-unstyled mt-auto">
+                                <li class="d-flex align-items-center me-3">
+                                <img src="{{post.author.email|gravatar}}" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
+                                <a href="{{url_for('about', email=post.author.email)}}"><small class="mx-2">{{post.author.name}}</small></a>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                <svg class="bi me-2" width="1em" height="1em"><use xlink:href="#calendar3"></use></svg>
+                                <small>{{post.date}}</small>
+                                </li>
+                            </ul>
+                            </div>
+                        </div>
+                        </a>
+                    </div>
+                    {%set count=count+1%}
+            {%endif%}
+        {%endfor%}
+        {%endblock%}
+
+        {%block post_unavailable%}
             <div class="col">
-                <a href="{{url_for('view_post', id=post.id)}}">
-                    <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
-                        <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                        <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold text-body-emphasis">{{post.title}}</h3>
+                <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-color: black;">
+                    <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                        <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">No Posts Available</h3>
                         <ul class="d-flex list-unstyled mt-auto">
                             <li class="d-flex align-items-center me-3">
-                            <img src="{{post.author.email|gravatar}}" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
-                            <a href="{{url_for('about', email=post.author.email)}}"><small class="mx-2">{{post.author.name}}</small></a>
-                            </li>
-                            <li class="d-flex align-items-center">
-                            <svg class="bi me-2" width="1em" height="1em"><use xlink:href="#calendar3"></use></svg>
-                            <small>{{post.date}}</small>
+                                <small>There are Currently No Posts Available</small>
                             </li>
                         </ul>
-                        </div>
                     </div>
-                </a>
-            </div>
-            {%set count=count+1%}
-        {%endfor%}
-    {%endblock%}
-
-    {%block post_unavailable%}
-        <div class="col">
-            <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-color: black;">
-                <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                    <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">No Posts Available</h3>
-                    <ul class="d-flex list-unstyled mt-auto">
-                        <li class="d-flex align-items-center me-3">
-                            <small>There are Currently No Posts Available</small>
-                        </li>
-                    </ul>
                 </div>
             </div>
-        </div>
-    {%endblock%}
+        {%endblock%}
 
-    {%block form%}
-        <main class="mb-4">
-            <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-md-10 mx-auto">
-                {% with messages = get_flashed_messages() %}
-                    {% for message in messages %}
-                    <p style="color: red; text-align: center;">{{message}}</p>
-                    {% endfor %}
-                {% endwith %}
-                {{render_form(form, novalidate=True, button_map={"submit": "primary"})}}
+        {%block form%}
+            <main class="mb-4">
+                <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 col-md-10 mx-auto">
+                    {% with messages = get_flashed_messages() %}
+                        {% for message in messages %}
+                        <p style="color: red; text-align: center;">{{message}}</p>
+                        {% endfor %}
+                    {% endwith %}
+                    {{render_form(form, novalidate=True, button_map={"submit": "primary"})}}
+                    </div>
                 </div>
-            </div>
-            </div>
-        </main>
-    {%endblock%}
+                </div>
+            </main>
+        {%endblock%}
     {%endblock%}
     
     <div class="container">
