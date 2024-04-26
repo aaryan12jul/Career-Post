@@ -388,6 +388,8 @@ def about(email, message=''):
 
                 else:
                     flash("The Email You Entered Is Invalid")
+        else:
+            form = ContactForm()
         return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, email_sent=email_sent, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
     return redirect(url_for('homepage'))
 
