@@ -31,11 +31,11 @@
                 </a>
     
                 <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0 nav-pills px-2">
-                    <li><a href="{{url_for('homepage')}}" class="nav-link px-2 link-body-emphasis {{active0}}">Career Post</a></li>
-                    <li><a href="{{url_for('posts')}}" class="nav-link px-2 link-body-emphasis {{active1}}">Latest Posts</a></li>
+                    <li><a href="{{url_for('homepage')}}" class="nav-link px-2 {{active0}}">Career Post</a></li>
+                    <li><a href="{{url_for('posts')}}" class="nav-link px-2 {{active1}}">Latest Posts</a></li>
                     {%if not logged_in%}
-                        <li><a href="{{url_for('login')}}" class="nav-link px-2 link-body-emphasis {{active2}}">Login</a></li>
-                        <li><a href="{{url_for('register')}}" class="nav-link px-2 link-body-emphasis {{active3}}">Register</a></li>
+                        <li><a href="{{url_for('login')}}" class="nav-link px-2 {{active2}}">Login</a></li>
+                        <li><a href="{{url_for('register')}}" class="nav-link px-2 {{active3}}">Register</a></li>
                     {%endif%}
                 </ul>
     
@@ -75,7 +75,7 @@
                     <a href="{{url_for('view_post', id=post.id)}}">
                         <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
                             <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                            <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold text-body-emphasis">{{post.title}}</h3>
+                            <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">{{post.title}}</h3>
                             <ul class="d-flex list-unstyled mt-auto">
                                 <li class="d-flex align-items-center me-3">
                                 <img src="{{post.author.email|gravatar}}" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
