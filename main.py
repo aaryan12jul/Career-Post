@@ -356,8 +356,8 @@ def delete_post(email, id):
     return abort(403)
 
 # About Page Route
-@app.route('/about/<email>', methods=['GET', 'POST'])
-@app.route('/about/<email>/<message>')
+@app.route('/<email>', methods=['GET', 'POST'])
+@app.route('/<email>/<message>')
 def about(email, message=''):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
