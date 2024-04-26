@@ -12,7 +12,7 @@ from wtforms.validators import DataRequired, Email
 from flask_ckeditor import CKEditor, CKEditorField
 from flask_gravatar import Gravatar
 from werkzeug.security import generate_password_hash, check_password_hash
-from smtplib import SMTP
+from smtplib import SMTP, SMTPResponseException
 from datetime import datetime, date
 from functools import wraps
 
@@ -378,17 +378,21 @@ def about(email, message=''):
             message = form.message.data
 
             from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
-            if from_user:
-                EMAIL = os.environ.get('EMAIL')
-                PASSWORD = os.environ.get('PASSWORD')
-                with SMTP('smtp.gmail.com') as connection:
-                    connection.starttls()
-                    connection.login(user=EMAIL, password=PASSWORD)
-                    connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
-                message = 'Email Successfully Sent'
-            else:
-                flash("The Email You Entered Is Invalid")
-
+            try:
+                if from_user:
+                    EMAIL = os.environ.get('EMAIL')
+                    PASSWORD = os.environ.get('PASSWORD')
+                    with SMTP('smtp.gmail.com') as connection:
+                        connection.starttls()
+                        connection.login(user=EMAIL, password=PASSWORD)
+                        connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
+                    message = 'Email Successfully Sent'
+                else:
+                    flash("The Email You Entered Is Invalid")
+            except SMTPResponseException:
+                message = 'Unfortunately, You Device is Blocking Email Transfer. Please Email Directly'
+                flash('Unfortunately, You Device is Blocking Email Transfer. Please Email Directly')
+                
         return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
     return redirect(url_for('posts'))
 
