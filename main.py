@@ -1,6 +1,6 @@
 # Imports
 import os
-from flask import Flask, render_template, redirect, url_for, flash, abort, request
+from flask import Flask, render_template, redirect, url_for, flash, abort, request, session
 from flask_bootstrap import Bootstrap5
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
@@ -353,6 +353,10 @@ def edit_post(email, id):
 @logged_on
 def delete_post(email, id):
     if current_user.email == email or current_user.admin:
+        verified = session.get('delete', False)
+        if not verified:
+            return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+
         post = db.get_or_404(Post, id)
         
         db.session.delete(post)
@@ -422,6 +426,10 @@ def edit_about(email):
 @logged_on
 def delete_account(email):
     if current_user.email == email or current_user.admin:
+        verified = session.get('delete', False)
+        if not verified:
+            return redirect(url_for('confirm', target=url_for('delete_account', email=email)))
+
         user = db.session.execute(db.select(User).where(User.email==email)).scalar()
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
         comments = db.session.execute(db.select(Comment).where(Comment.author_id==user.id)).scalars().all()
@@ -448,10 +456,27 @@ def delete_account(email):
 def delete_comment(id):
     comment = db.get_or_404(Comment, id)
     if current_user.admin or current_user.id == comment.author_id or comment.post.author.email == current_user.email:
+        verified = session.get('delete', False)
+        if not verified:
+            return redirect(url_for('confirm', target=url_for('delete_comment', id=id)))
+        
         post = db.get_or_404(Post, comment.post_id)
         db.session.delete(comment)
         db.session.commit()
         return redirect(url_for('view_post', id=post.id))
+    return abort(403)
+
+# Confirmation Page
+@app.route('/confirm', methods=['GET', 'POST'])
+def confirm():
+    target = request.args.get('target')
+    if request.method == 'GET':
+        verified = session.get('delete', False)
+        if not verified:
+            return render_template('confirm.html', dark_mode=dark_mode, year=year, logged_in=current_user.is_authenticated, user=current_user, post='', target=target)
+    elif request.method == 'POST':
+        session['delete'] = True
+        return redirect(target)
     return abort(403)
 
 # Search Route
