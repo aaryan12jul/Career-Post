@@ -471,12 +471,14 @@ def delete_comment(id):
 def confirm():
     target = request.args.get('target')
     if request.method == 'GET':
-        verified = session.get('delete', False)
-        if not verified:
-            return render_template('confirm.html', dark_mode=dark_mode, year=year, logged_in=current_user.is_authenticated, user=current_user, post='', target=target)
+        return render_template('confirm.html', dark_mode=dark_mode, year=year, logged_in=current_user.is_authenticated, user=current_user, post='', target=target)
     elif request.method == 'POST':
-        session['delete'] = True
-        return redirect(target)
+        try:
+            if request.form['delete']:
+                session['delete'] = True
+                return redirect(target)
+        except KeyError: 
+            return redirect(url_for('posts'))
     return abort(403)
 
 # Search Route
