@@ -15,6 +15,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from smtplib import SMTP, SMTPException
 from datetime import datetime, date
 from functools import wraps
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+# Email Configuration
+EMAIL = os.environ.get('EMAIL')
+API = os.environ.get('SENDGRID')
 
 # Flask App
 app = Flask(__name__)
@@ -362,7 +368,6 @@ def about(email, message=''):
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     if user:
         posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
-        flash('Unfortunately, You Device is Blocking Email Transfer. Please Email Directly')
         
         if current_user.is_authenticated:
             form = ContactForm(
@@ -376,23 +381,22 @@ def about(email, message=''):
             name = form.name.data
             from_email = form.email.data
             phone = form.phone.data
-            message = form.message.data
+            mail = form.message.data
 
             from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
-            try:
-                if from_user:
-                    EMAIL = os.environ.get('EMAIL')
-                    PASSWORD = os.environ.get('PASSWORD')
-                    with SMTP('smtp.gmail.com') as connection:
-                        connection.starttls()
-                        connection.login(user=EMAIL, password=PASSWORD)
-                        connection.sendmail(from_addr=EMAIL, to_addrs=email, msg=f"Subject: Someone Using Career Post Has Tried to Contact You\n\nName: {name}\nEmail: {from_email}\nPhone Number: {phone}\nMessage:\n{message}")
-                    message = 'Email Successfully Sent'
-                else:
-                    flash("The Email You Entered Is Invalid")
-            except SMTPException:
-                message = 'Unfortunately, You Device is Blocking Email Transfer. Please Email Directly'
-                flash('Unfortunately, You Device is Blocking Email Transfer. Please Email Directly')
+            if from_user:
+                email = Mail(
+                    from_email=EMAIL,
+                    to_emails=email,
+                    subject='Someone Using Career Post Has Tried to Contact You',
+                    html_content=f'Name: {name}<br><br>Email: {from_email}<br><br>Phone Number: {phone}<br><br>Message:<br>{mail}'
+                )
+            
+                sg = SendGridAPIClient(API)
+                sg.send(email)
+                message = 'Email Successfully Sent'
+            else:
+                flash("The Email You Entered Is Invalid")
 
         return render_template('viewer.html', form=form, dark_mode=dark_mode, message=message, edit_url=url_for('edit_about', email=user.email), posts=list(reversed(posts)), count_target=3, email=user.email, title=user.name, name=user.name, text=user.about_text, year=year, logged_in=current_user.is_authenticated, user=current_user, author=user)
     return redirect(url_for('posts'))
@@ -487,4 +491,4 @@ def make_premium(email):
 
 # Running Code
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
