@@ -385,7 +385,7 @@ def about(email, message=''):
 
             from_user = db.session.execute(db.select(User).where(User.email==from_email)).scalar()
             if from_user:
-                email = Mail(
+                sendmail = Mail(
                     from_email=EMAIL,
                     to_emails=email,
                     subject='Someone Using Career Post Has Tried to Contact You',
@@ -393,7 +393,7 @@ def about(email, message=''):
                 )
             
                 sg = SendGridAPIClient(API)
-                sg.send(email)
+                sg.send(sendmail)
                 message = 'Email Successfully Sent'
             else:
                 flash("The Email You Entered Is Invalid")
