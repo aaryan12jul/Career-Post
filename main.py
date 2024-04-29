@@ -518,6 +518,24 @@ def make_premium(email):
     db.session.commit()
     return redirect(url_for('about', email=email))
 
+# Remove Admin Route
+@app.route('/remove-admin/<email>')
+@admin_only
+def remove_admin(email):
+    user = db.session.execute(db.select(User).where(User.email==email)).scalar()
+    user.admin = False
+    db.session.commit()
+    return redirect(url_for('about', email=email))
+
+# Remove Premium Route
+@app.route('/remove-premium/<email>')
+@admin_only
+def remove_premium(email):
+    user = db.session.execute(db.select(User).where(User.email==email)).scalar()
+    user.premium = False
+    db.session.commit()
+    return redirect(url_for('about', email=email))
+
 # Running Code
 if __name__ == '__main__':
     app.run(debug=True)

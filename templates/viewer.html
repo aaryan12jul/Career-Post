@@ -10,20 +10,28 @@
         {%endif%}
           {%if title == name%}
             {%if user.admin%}
-              <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Admin</button></a>
-              <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2">Make Premium</button></a>
-              <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>
+              {%if author.admin%}
+                <a href="{{url_for('remove_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2 my-2">Remove Admin</button></a>
+              {%else%}
+                <a href="{{url_for('make_admin', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2 my-2">Make Admin</button></a>
+              {%endif%}
+              {%if author.premium%}
+                <a href="{{url_for('remove_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2 my-2">Remove Premium</button></a>
+              {%else%}
+                <a href="{{url_for('make_premium', email=email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3 mx-2 my-2">Make Premium</button></a>
+              {%endif%}
+              <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2 my-2">Delete Account</button></a>
             {%else%}
               {%if author.email == user.email%}
-                <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Account</button></a>            
+                <a href="{{url_for('delete_account', email=email)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2 my-2">Delete Account</button></a>            
               {%endif%}
             {%endif%}
           {%else%}
             {%if user.email == email%}
-              <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+              <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2 my-2">Delete Post</button></a>
             {%else%}
               {%if user.admin%}
-                <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2">Delete Post</button></a>
+                <a href="{{url_for('delete_post', email=email, id=id)}}"><button type="button" class="btn btn-danger btn-lg px-4 gap-3 mx-2 my-2">Delete Post</button></a>
               {%endif%}
             {%endif%}
           {%endif%}
