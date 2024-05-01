@@ -12,7 +12,6 @@ from wtforms.validators import DataRequired, Email
 from flask_ckeditor import CKEditor, CKEditorField
 from flask_gravatar import Gravatar
 from werkzeug.security import generate_password_hash, check_password_hash
-from smtplib import SMTP, SMTPException
 from datetime import datetime, date
 from functools import wraps
 from sendgrid import SendGridAPIClient
@@ -83,6 +82,7 @@ class User(db.Model, UserMixin):
 
     admin: Mapped[bool] = mapped_column(Boolean, nullable=False)
     premium: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    terminate: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     posts: Mapped[list["Post"]] = relationship("Post", back_populates="author")
     comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="author")
@@ -142,12 +142,37 @@ class CommentForm(FlaskForm):
     comment = CKEditorField("Comment", validators=[DataRequired()])
     submit = SubmitField("Send Comment")
 
+# Terminating Account
+def terminate():
+    if current_user.terminate:
+        user = db.session.execute(db.select(User).where(User.email==current_user.email)).scalar()
+        posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
+        comments = db.session.execute(db.select(Comment).where(Comment.author_id==user.id)).scalars().all()
+        for post in posts:
+            for comment in post.comments:
+                db.session.delete(comment)
+            db.session.delete(post)
+
+        for comment in comments:
+            db.session.delete(comment)
+
+        logout_user()
+        db.session.delete(user)
+        db.session.commit()
+
+        flash('Your Account has been Terminated by an Admin. In order to Continue using Career Post, Please Make a New Account.')
+        return True
+    return False
+
+
 # Admin Only Decorator
 def admin_only(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if current_user.get_id() != '1':
+        if current_user.email != 'aaryan12jul@gmail.com':
             if current_user.is_authenticated and current_user.admin:
+                if terminate():
+                    return redirect(url_for('register'))
                 return function(*args, **kwargs)
             return abort(403)
         else:
@@ -161,8 +186,10 @@ def admin_only(function):
 def premium_only(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        if current_user.get_id() != '1':
+        if current_user.email != 'aaryan12jul@gmail.com':
             if current_user.is_authenticated and current_user.premium:
+                if terminate():
+                    return redirect(url_for('register'))
                 return function(*args, **kwargs)
             return abort(403)
         else:
@@ -172,11 +199,13 @@ def premium_only(function):
             return function(*args, **kwargs)
     return wrapper
 
-# Non Anonymous Users Only Decorator
+# Authenticated Users Only Decorator
 def logged_on(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
         if current_user.is_authenticated:
+            if terminate():
+                return redirect(url_for('register'))
             return function(*args, **kwargs)
         else:
             flash('You Need to Login First')
@@ -303,18 +332,21 @@ def create_post():
         post = db.session.execute(db.select(Post).where(Post.title==form.title.data)).scalar()
 
         if not post:
-            new_post = Post(
-                title=form.title.data.title(),
-                subtitle=form.subtitle.data,
-                text=form.body.data,
-                img_url=form.img_url.data,
-                author=current_user,
-                date=date.today().strftime("%B %d, %Y")
-            )
+            if len(form.title.data) <= 250 and len(form.subtitle.data) <= 250:
+                new_post = Post(
+                    title=form.title.data.title(),
+                    subtitle=form.subtitle.data,
+                    text=form.body.data,
+                    img_url=form.img_url.data,
+                    author=current_user,
+                    date=date.today().strftime("%B %d, %Y")
+                )
 
-            db.session.add(new_post)
-            db.session.commit()
-            return redirect(url_for("posts"))
+                db.session.add(new_post)
+                db.session.commit()
+                return redirect(url_for("posts"))
+            else:
+                flash('The Title/Subtitle of your Post is Too Long')
         else:
             flash('A Post with that Title Already Exists')
     
@@ -355,7 +387,7 @@ def delete_post(email, id):
     if current_user.email == email or current_user.admin:
         verified = session.get('delete', False)
         if not verified:
-            return redirect(url_for('confirm', target=url_for('delete_account', email=email)))
+            return redirect(url_for('confirm', target=url_for('delete_post', email=email)))
 
         post = db.get_or_404(Post, id)
         for comment in post.comments:
@@ -433,23 +465,10 @@ def delete_account(email):
             return redirect(url_for('confirm', target=url_for('delete_account', email=email)))
 
         user = db.session.execute(db.select(User).where(User.email==email)).scalar()
-        posts = db.session.execute(db.select(Post).where(Post.author_id==user.id)).scalars().all()
-        comments = db.session.execute(db.select(Comment).where(Comment.author_id==user.id)).scalars().all()
-        for post in posts:
-            for comment in post.comments:
-                db.session.delete(comment)
-            db.session.delete(post)
-
-        for comment in comments:
-            db.session.delete(comment)
-
-        db.session.delete(user)
+        user.terminate = True
         db.session.commit()
-        if current_user.email == email:
-            logout_user()
-            return redirect(url_for('register'))
-        else:
-            return redirect(url_for('posts'))
+
+        return redirect(url_for('about', message="Account Deletion Pending", email=email))
     return abort(403)
 
 # Delete Comments Route
