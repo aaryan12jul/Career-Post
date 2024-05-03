@@ -160,7 +160,7 @@ def terminate():
         db.session.delete(user)
         db.session.commit()
 
-        flash('Your Account has been Terminated by an Admin. In order to Continue using Career Post, Please Make a New Account.')
+        flash('Your Account has been Terminated.')
         return True
     return False
 
@@ -178,23 +178,6 @@ def admin_only(function):
         else:
             user = db.get_or_404(User, 1)
             user.admin = True
-            db.session.commit()
-            return function(*args, **kwargs)
-    return wrapper
-
-# Premium Only Decorator
-def premium_only(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        if current_user.email != 'aaryan12jul@gmail.com':
-            if current_user.is_authenticated and current_user.premium:
-                if terminate():
-                    return redirect(url_for('register'))
-                return function(*args, **kwargs)
-            return abort(403)
-        else:
-            user = db.get_or_404(User, 1)
-            user.premium = True
             db.session.commit()
             return function(*args, **kwargs)
     return wrapper
@@ -299,6 +282,9 @@ def view_post(id):
         form = CommentForm()
         
         if form.validate_on_submit():
+            if terminate():
+                return redirect(url_for('register'))
+            
             if current_user.is_authenticated:
                 user = db.get_or_404(User, current_user.get_id())
 
@@ -313,7 +299,7 @@ def view_post(id):
             else:
                 flash('You Need to Login to Comment on Posts')
                 return redirect(url_for('login'))
-        return render_template('viewer.html', post=post, form=form, dark_mode=dark_mode, edit_url=url_for('edit_post', email=post.author.email, id=id), id=id, posts=list(reversed(posts)), count_target=3, email=post.author.email, title=post.title, subtitle=post.subtitle, name=post.author.name, text=post.text, image=post.img_url, year=year, logged_in=current_user.is_authenticated, user=current_user, author=author)
+        return render_template('viewer.html', comments=list(reversed(post.comments)), post=post, form=form, dark_mode=dark_mode, edit_url=url_for('edit_post', email=post.author.email, id=id), id=id, posts=list(reversed(posts)), count_target=3, email=post.author.email, title=post.title, subtitle=post.subtitle, name=post.author.name, text=post.text, image=post.img_url, year=year, logged_in=current_user.is_authenticated, user=current_user, author=author)
     
     return redirect(url_for('posts'))
 
@@ -489,6 +475,7 @@ def delete_comment(id):
 
 # Confirmation Page
 @app.route('/confirm', methods=['GET', 'POST'])
+@logged_on
 def confirm():
     target = request.args.get('target')
     if request.method == 'GET':

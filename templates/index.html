@@ -8,8 +8,13 @@
         <div class="col-lg-6 mx-auto">
             <p class="lead mb-4">The All in One Service for All your Hiring Needs</p>
             <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <a href="{{url_for('register')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Register Now!</button></a>
-            <a href="{{url_for('login')}}"><button type="button" class="btn btn-outline-secondary btn-lg px-4">Log in</button></a>
+            {%if logged_in%}
+            <a href="{{url_for('create_post')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Create A New Post!</button></a>
+            <a href="{{url_for('about', email=user.email)}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">View Your About!</button></a>
+            {%else%}
+              <a href="{{url_for('register')}}"><button type="button" class="btn btn-primary btn-lg px-4 gap-3">Register Now!</button></a>
+              <a href="{{url_for('login')}}"><button type="button" class="btn btn-outline-secondary btn-lg px-4">Log in</button></a>
+            {%endif%}
             </div>
         </div>
     </div>

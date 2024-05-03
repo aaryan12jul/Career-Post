@@ -103,14 +103,14 @@
             {{ ckeditor.config(name='comment') }}
             {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
             <ul class="commentList">
-              {%for comment in post.comments%}
-                <li class="mt-5">
+              {%for comment in comments%}
+                <li class="pt-5">
                   <div class="commenterImage">
                     <img src="{{comment.author.email|gravatar}}">
                   </div>
-                  <div class="commentText">
-                    <p>{{comment.text|safe}}</p>
-                    <span class="date sub-text">{{comment.author.name}}</span>
+                  <span class="date sub-text">{{comment.author.name}}</span>
+                  <div class="commentText" style="overflow-x: scroll;">
+                    {{comment.text|safe}}
                   </div>
                 </li>
                 {%if title != name%}
