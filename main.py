@@ -373,7 +373,7 @@ def delete_post(email, id):
     if current_user.email == email or current_user.admin:
         verified = session.get('delete', False)
         if not verified:
-            return redirect(url_for('confirm', target=url_for('delete_post', email=email)))
+            return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
 
         post = db.get_or_404(Post, id)
         for comment in post.comments:
@@ -544,4 +544,4 @@ def remove_premium(email):
 
 # Running Code
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
