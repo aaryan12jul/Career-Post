@@ -510,6 +510,10 @@ def theme(make):
 @app.route('/make-admin/<email>')
 @admin_only
 def make_admin(email):
+    verified = session.get('delete', False)
+    if not verified:
+        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.admin = True
     db.session.commit()
@@ -519,6 +523,10 @@ def make_admin(email):
 @app.route('/make-premium/<email>')
 @admin_only
 def make_premium(email):
+    verified = session.get('delete', False)
+    if not verified:
+        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.premium = True
     db.session.commit()
@@ -528,6 +536,10 @@ def make_premium(email):
 @app.route('/remove-admin/<email>')
 @admin_only
 def remove_admin(email):
+    verified = session.get('delete', False)
+    if not verified:
+        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.admin = False
     db.session.commit()
@@ -537,6 +549,10 @@ def remove_admin(email):
 @app.route('/remove-premium/<email>')
 @admin_only
 def remove_premium(email):
+    verified = session.get('delete', False)
+    if not verified:
+        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.premium = False
     db.session.commit()
