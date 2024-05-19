@@ -67,30 +67,28 @@
 
     {%block content%}
         {%block post_latest%}
-        {%set count=0%}
-        {%for post in posts%}
-            {%if count < count_target%}
-                <div class="col">
-                    <a href="{{url_for('view_post', id=post.id)}}">
-                        <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
-                            <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
-                            <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">{{post.title}}</h3>
-                            <ul class="d-flex list-unstyled mt-auto">
-                                <li class="d-flex align-items-center me-3">
-                                <img src="{{post.author.email|gravatar}}" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
-                                <a href="{{url_for('about', email=post.author.email)}}"><small class="mx-2">{{post.author.name}}</small></a>
-                                </li>
-                                <li class="d-flex align-items-center">
-                                <svg class="bi me-2" width="1em" height="1em"><use xlink:href="#calendar3"></use></svg>
-                                <small>{{post.date}}</small>
-                                </li>
-                            </ul>
-                            </div>
+        {% set count = namespace(value=0) %}
+        {%for post in posts if count.value < count_target%}
+            <div class="col">
+                <a href="{{url_for('view_post', id=post.id)}}">
+                    <div class="card card-cover h-100 overflow-hidden text-bg-dark rounded-4 shadow-lg" style="background-image: url({{post.img_url}}); background-repeat: no-repeat; background-position: center; background-size: cover;">
+                        <div class="d-flex flex-column h-100 p-5 pb-3 text-white text-shadow-1">
+                        <h3 class="pt-5 mt-5 mb-4 display-6 lh-1 fw-bold">{{post.title}}</h3>
+                        <ul class="d-flex list-unstyled mt-auto">
+                            <li class="d-flex align-items-center me-3">
+                            <img src="{{post.author.email|gravatar}}" alt="Profile Picture" width="32" height="32" class="rounded-circle border border-white">
+                            <a href="{{url_for('about', email=post.author.email)}}"><small class="mx-2">{{post.author.name}}</small></a>
+                            </li>
+                            <li class="d-flex align-items-center">
+                            <svg class="bi me-2" width="1em" height="1em"><use xlink:href="#calendar3"></use></svg>
+                            <small>{{post.date}}</small>
+                            </li>
+                        </ul>
                         </div>
-                        </a>
                     </div>
-                    {%set count=count+1%}
-            {%endif%}
+                    </a>
+                </div>
+                {% set count.value = count.value + 1 %}
         {%endfor%}
         {%endblock%}
 
