@@ -315,9 +315,11 @@ def create_post():
     
     form = CreatePostForm()
     if form.validate_on_submit():
-        post = db.session.execute(db.select(Post).where(Post.title==form.title.data)).scalar()
+        post = db.session.execute(db.select(Post).where(Post.title==form.title.data.title())).scalar()
 
-        if not post:
+        if post:
+            flash('A Post with that Title Already Exists')   
+        else:
             if len(form.title.data) <= 250 and len(form.subtitle.data) <= 250:
                 new_post = Post(
                     title=form.title.data.title(),
@@ -333,8 +335,6 @@ def create_post():
                 return redirect(url_for("posts"))
             else:
                 flash('The Title/Subtitle of your Post is Too Long')
-        else:
-            flash('A Post with that Title Already Exists')
     
     return render_template("form.html", form=form, year=year, dark_mode=dark_mode, title="Create Post", logged_in=current_user.is_authenticated, user=current_user)
 
@@ -512,7 +512,7 @@ def theme(make):
 def make_admin(email):
     verified = session.get('delete', False)
     if not verified:
-        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+        return redirect(url_for('confirm', target=url_for('make_admin', email=email)))
 
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.admin = True
@@ -525,7 +525,7 @@ def make_admin(email):
 def make_premium(email):
     verified = session.get('delete', False)
     if not verified:
-        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+        return redirect(url_for('confirm', target=url_for('make_premium', email=email)))
 
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.premium = True
@@ -538,7 +538,7 @@ def make_premium(email):
 def remove_admin(email):
     verified = session.get('delete', False)
     if not verified:
-        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+        return redirect(url_for('confirm', target=url_for('remove_admin', email=email)))
 
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.admin = False
@@ -551,7 +551,7 @@ def remove_admin(email):
 def remove_premium(email):
     verified = session.get('delete', False)
     if not verified:
-        return redirect(url_for('confirm', target=url_for('delete_post', email=email, id=id)))
+        return redirect(url_for('confirm', target=url_for('remove_premium', email=email)))
 
     user = db.session.execute(db.select(User).where(User.email==email)).scalar()
     user.premium = False
@@ -560,4 +560,4 @@ def remove_premium(email):
 
 # Running Code
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
